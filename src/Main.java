@@ -7,15 +7,21 @@ public class Main {
         prepareGame(null, null);
     }
 
+    public enum gameResult {
+        WIN,
+        DRAW,
+        CONTINUE
+    }
+
     public static void prepareGame(String player1Name, String player2Name) {
         Scanner scanner = new Scanner(System.in);
         String player1 = player1Name != null ? player1Name : createPlayer(1, scanner);
         String player2 = player2Name != null ? player2Name : createPlayer(2, scanner);
         String[] players = new String[]{player1, player2};
 
-        String[][] gameBoard = new String[3][3];
+        char[][] gameBoard = new char[3][3];
         createGameBoard(gameBoard);
-        startGame(gameBoard, players, scanner);
+        startGame(gameBoard, players);
     }
 
     public static String createPlayer(int playerOrder, Scanner scanner) {
@@ -23,9 +29,9 @@ public class Main {
         return scanner.nextLine();
     }
 
-    public static void startGame(String[][] gameBoard, String[] players, Scanner scanner) {
+    public static void startGame(char[][] gameBoard, String[] players) {
         System.out.println("New game!");
-        final String[] symbols = new String[]{"X", "O"};
+        final char[] symbols = new char[]{'X', 'O'};
         boolean gameIsRunning = true;
         int i = 0;
         printGameBoard(gameBoard, true);
@@ -38,59 +44,60 @@ public class Main {
 
             while (playerTurn) {
                 try {
-                    int position = scanner.nextInt();
+                    int position = choosePositon();
                     if (position > 9 || position < 1) {
                         System.out.println("Only numbers between 1 and 9 are allowed");
-                    } else if (isAvailableAndFill(gameBoard, position, symbols[i])) {
+                    } else if (isAvailable(gameBoard, position)) {
+                        addSymbol(gameBoard, position, symbols[i]);
                         playerTurn = false;
                     } else {
                         System.out.println("Position is already filled");
                     }
                 } catch (InputMismatchException e) {
                     System.out.println("Invalid input, only numbers are allowed.");
-                    scanner.nextLine();
                 }
             }
-            String result = checkEndGame(gameBoard, symbols[i]);
-            if (result.equals("winner")) {
+            gameResult result = checkEndGame(gameBoard, symbols[i]);
+            if (result.equals(gameResult.WIN)) {
                 printGameBoard(gameBoard, false);
                 System.out.println(players[i] + " wins!");
                 gameIsRunning = false;
-            } else if (result.equals("draw")) {
+            } else if (result.equals(gameResult.DRAW)) {
                 printGameBoard(gameBoard, false);
                 System.out.println("Draw!");
                 gameIsRunning = false;
             }
             i = (i == 0 ? 1 : 0);
         }
-        restartGame(players, scanner);
+        restartGame(players);
     }
 
-    public static boolean isAvailableAndFill(String[][] gameBoard, int position, String symbol) {
-        int counter = 0;
-        for (int i = 0; i < gameBoard.length; i++) {
-            for (int j = 0; j < gameBoard[i].length; j++) {
-                counter++;
-                if (counter == position) {
-                    if (gameBoard[i][j].equals("_")) {
-                        gameBoard[i][j] = symbol;
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+    public static int choosePositon() {
+        Scanner scanner = new Scanner(System.in);
+        return (scanner.nextInt());
     }
 
-    public static void createGameBoard(String[][] gameBoard) {
+    public static boolean isAvailable(char[][] gameBoard, int position) {
+        int i = (position - 1) / gameBoard.length;
+        int j = (position - 1) % gameBoard.length;
+        return gameBoard[i][j] == '_';
+    }
+
+    public static void addSymbol(char[][] gameBoard, int position, char symbol) {
+        int i = (position - 1) / gameBoard.length;
+        int j = (position - 1) % gameBoard.length;
+        gameBoard[i][j] = symbol;
+    }
+
+    public static void createGameBoard(char[][] gameBoard) {
         for (int i = 0; i < gameBoard.length; i++) {
             for (int j = 0; j < gameBoard[0].length; j++) {
-                gameBoard[i][j] = "_";
+                gameBoard[i][j] = '_';
             }
         }
     }
 
-    public static void printGameBoard(String[][] gameBoard, boolean isTemplate) {
+    public static void printGameBoard(char[][] gameBoard, boolean isTemplate) {
         if (isTemplate) {
             System.out.println("Game board positions: ");
         } else {
@@ -108,7 +115,7 @@ public class Main {
         }
     }
 
-    public static String checkEndGame(String[][] gameBoard, String symbol) {
+    public static gameResult checkEndGame(char[][] gameBoard, char symbol) {
         int mainDiagonalCounter = 0;
         int secondaryDiagonalCounter = 0;
         int checkDraw = 0;
@@ -117,48 +124,48 @@ public class Main {
             int rowCounter = 0;
             int columnCounter = 0;
             for (int column = 0; column < gameBoard[0].length; column++) {
-                if (gameBoard[row][column].equals(symbol)) {
+                if (gameBoard[row][column] == symbol) {
                     rowCounter++;
                 } else {
                     rowCounter = 0;
                 }
-                if (gameBoard[column][row].equals(symbol)) {
+                if (gameBoard[column][row] == symbol) {
                     columnCounter++;
                 } else {
                     columnCounter = 0;
                 }
-                if (!gameBoard[row][column].equals("_")) {
+                if (gameBoard[row][column] != '_') {
                     checkDraw++;
                 }
 
                 if (rowCounter == 3 || columnCounter == 3) {
-                    return "winner";
+                    return gameResult.WIN;
                 }
             }
-            if (gameBoard[row][row].equals(symbol)) {
+            if (gameBoard[row][row] == symbol) {
                 mainDiagonalCounter++;
             } else {
                 mainDiagonalCounter = 0;
             }
-            if (gameBoard[row][gameBoard.length - row - 1].equals(symbol)) {
+            if (gameBoard[row][gameBoard.length - row - 1] == symbol) {
                 secondaryDiagonalCounter++;
             } else {
                 secondaryDiagonalCounter = 0;
             }
 
             if (mainDiagonalCounter == 3 || secondaryDiagonalCounter == 3) {
-                return "winner";
+                return gameResult.WIN;
             }
         }
         if (checkDraw == 9) {
-            return "draw";
+            return gameResult.DRAW;
         }
-        return "";
+        return gameResult.CONTINUE;
     }
 
-    public static void restartGame(String[] players, Scanner scanner) {
+    public static void restartGame(String[] players) {
+        Scanner scanner = new Scanner(System.in);
         while (true) {
-            scanner.nextLine();
             System.out.println("Do you want to restart the game? (y/n)");
             String answer = scanner.nextLine();
             if (answer.equals("y")) {
